@@ -35,23 +35,10 @@ function compile {
     cp "${ASTRA_SIM_DIR}"/network_frontend/ns3/wscript "${NS3_DIR}"/simulation/src/applications
     cd "${NS3_DIR}/simulation"
     CC='gcc-5' CXX='g++-5' ./waf configure 
-    #./waf --run 'scratch/AstraSimNetwork mix/config.txt'    
-    ./waf --run 'scratch/AstraSimNetwork mix/ns3_inf/config.txt'
+    ./waf --run 'scratch/AstraSimNetwork mix/config.txt'
     cd "${SCRIPT_DIR:?}"
 }
 
-function debug {
-    cp "${ASTRA_SIM_DIR}"/network_frontend/ns3/*.cc "${NS3_DIR}"/simulation/scratch/
-    # cp "${ASTRA_SIM_DIR}"/network_frontend/ns3/*.c "${NS3_DIR}"/simulation/scratch/
-    # cp "${ASTRA_SIM_DIR}"/network_frontend/ns3/*.hh "${NS3_DIR}"/simulation/scratch/
-    cp "${ASTRA_SIM_DIR}"/network_frontend/ns3/*.h "${NS3_DIR}"/simulation/scratch/
-    cp "${ASTRA_SIM_DIR}"/network_frontend/ns3/wscript "${NS3_DIR}"/simulation/src/applications
-    cd "${NS3_DIR}/simulation"
-    CC='gcc-5' CXX='g++-5' ./waf configure
-    ./waf --run 'scratch/AstraSimNetwork' --command-template="gdb --args %s mix/ns3_inf/config.txt"
-    #gdb "${NS3_DIR}/simulation/build/scratch/AstraSimNetwork"
-    cd "${SCRIPT_DIR:?}"
-}
 
 # Main Script
 case "$1" in
@@ -63,9 +50,6 @@ case "$1" in
 -c|--compile)
     setup
     compile;;
--d|--debug)
-    setup
-    debug;;
 -h|--help|*)
     printf "Prints help message";;
 esac
