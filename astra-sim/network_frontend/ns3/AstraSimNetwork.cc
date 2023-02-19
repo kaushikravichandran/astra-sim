@@ -16,9 +16,17 @@
 #include "ns3/csma-module.h"
 #include "ns3/Sys.hh"
 
+
+
 using namespace std;
 using namespace ns3;
 
+//#define original
+#define case_1
+
+
+/***
+#ifdef original
 std::vector<string> workloads {
   "microAllReduce.txt",
   "microAllToAll.txt"
@@ -27,6 +35,19 @@ std::vector<std::vector<int>> physical_dims {
   { 8, 4 },
   { 8, 4 }
 };
+#endif
+
+#ifdef case_1
+***/
+std::vector<string> workloads {
+  //"microAllReduce.txt"
+  "val_1_1gb_allreduce.txt"
+};
+std::vector<std::vector<int>> physical_dims {
+  { 8 }
+};
+//#endif
+
 
 queue<struct task1> workerQueue;
 unsigned long long tempcnt = 999;
@@ -228,6 +249,7 @@ int main (int argc, char *argv[]){
   for(int i=0;i<num_gpus;i++){
       systems[i]->workload->fire();
   }
+
   Simulator::Run ();
   //Simulator::Stop(TimeStep (0x7fffffffffffffffLL));
   Simulator::Stop(Seconds (2000000000));
