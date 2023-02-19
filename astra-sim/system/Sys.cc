@@ -119,9 +119,9 @@ Sys::Sys(
     std::vector<int> queues_per_dim,
     std::string my_sys,
     std::string my_workload,
-    float comm_scale,
-    float compute_scale,
-    float injection_scale,
+    double comm_scale,
+    double compute_scale,
+    double injection_scale,
     int total_stat_rows,
     int stat_row,
     std::string path,
@@ -410,20 +410,21 @@ int Sys::get_layer_numbers(std::string workload_input) {
   return Workload::get_layer_numbers(workload_input);
 }
 int Sys::get_priority(SchedulingPolicy pref_scheduling) {
-  if (pref_scheduling == SchedulingPolicy::None) {
-    if (scheduling_policy == SchedulingPolicy::LIFO) {
-      return priority_counter++;
-    } else {
-      return priority_counter--;
-    }
+  if (pref_scheduling == SchedulingPolicy::LIFO) {
+    return priority_counter++;
+  } else if (pref_scheduling == SchedulingPolicy::FIFO) {
+    return priority_counter--;
   } else if (pref_scheduling == SchedulingPolicy::HIGHEST) {
     return 100000000;
-  } else {
+  } else if (pref_scheduling == SchedulingPolicy::None) {
     if (scheduling_policy == SchedulingPolicy::LIFO) {
       return priority_counter++;
     } else {
       return priority_counter--;
     }
+  } else {
+    sys_panic("comm priority is unknown!");
+    return -1;
   }
 }
 int Sys::rendezvous_sim_send(
@@ -1022,7 +1023,7 @@ std::vector<std::string> Sys::split_string(std::string str, std::string sep) {
   }
   return arr;
 }
-int Sys::determine_chunk_size(uint64_t size, ComType type) {
+uint64_t Sys::determine_chunk_size(uint64_t size, ComType type) {
   uint64_t chunk_size = size / preferred_dataset_splits;
   return chunk_size;
 }
@@ -1585,13 +1586,20 @@ void Sys::insert_stream(std::list<BaseStream*>* queue, BaseStream* baseStream) {
     }
   } else if (
       intra_dimension_scheduling == IntraDimensionScheduling::SmallestFirst) {
+    if (baseStream->phases_to_go.size() == 1) {
+      it = queue->end();
+    }
     while (it != queue->end()) {
       if ((*it)->initialized == true) {
         std::advance(it, 1);
         continue;
       } else if (
-          (*it)->my_current_phase.initial_data_size <
-          baseStream->my_current_phase.initial_data_size) {
+          std::max(
+              (*it)->my_current_phase.initial_data_size,
+              (*it)->my_current_phase.final_data_size) <
+          std::max(
+              baseStream->my_current_phase.initial_data_size,
+              baseStream->my_current_phase.final_data_size)) {
         std::advance(it, 1);
         continue;
       } else {
@@ -1637,7 +1645,7 @@ void Sys::register_event(
     Callable* callable,
     EventType event,
     CallData* callData,
-    int cycles) {
+    Tick cycles) {
   Tick mycycles = cycles;
   try_register_event(callable, event, callData, mycycles);
   return;
@@ -1777,7 +1785,7 @@ void Sys::handleEvent(void* arg) {
     delete sendhd;
   }
 }
-timespec_t Sys::generate_time(int cycles) {
+timespec_t Sys::generate_time(Tick cycles) {
   timespec_t tmp = NI->sim_get_time();
   double addition = cycles * ((double)CLOCK_PERIOD);
   tmp.time_val = addition;
