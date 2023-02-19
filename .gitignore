@@ -16,3 +16,6 @@ examples/results/
 
 # JetBrains
 .idea/
+
+# Python Environment
+env_astrasim/
